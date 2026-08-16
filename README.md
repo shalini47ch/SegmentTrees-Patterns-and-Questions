@@ -420,8 +420,110 @@ class Solution:
 
             ans.append(result)
         return ans
-        
-        
+```        
+# Range GCD Queries
+
+🔗 **Problem:** [GeeksforGeeks - Range GCD Queries](https://www.geeksforgeeks.org/problems/range-gcd-queries3654/1)
+
+## Approach
+
+Use the **basic Segment Tree template**. The only change is the merge operation.
+
+Each node stores the **GCD of its range**.
+
+```python
+from math import gcd
+
+class Solution:
+
+    # Merge operation
+    def _merge(self, left, right):
+        return gcd(left, right)
+
+    # Build
+    def _build(self, nums, node, start, end):
+        if start == end:
+            self.tree[node] = nums[start]
+            return
+
+        mid = start + (end - start) // 2
+
+        self._build(nums, 2 * node, start, mid)
+        self._build(nums, 2 * node + 1, mid + 1, end)
+
+        self.tree[node] = self._merge(
+            self.tree[2 * node],
+            self.tree[2 * node + 1]
+        )
+
+    # Update
+    def _update(self, node, start, end, ind, val):
+        if start == end:
+            self.tree[node] = val
+            return
+
+        mid = start + (end - start) // 2
+
+        if ind <= mid:
+            self._update(2 * node, start, mid, ind, val)
+        else:
+            self._update(2 * node + 1, mid + 1, end, ind, val)
+
+        self.tree[node] = self._merge(
+            self.tree[2 * node],
+            self.tree[2 * node + 1]
+        )
+
+    # Range GCD Query
+    def _query(self, node, start, end, left, right):
+        # No overlap
+        if right < start or left > end:
+            return 0
+
+        # Complete overlap
+        if left <= start and end <= right:
+            return self.tree[node]
+
+        # Partial overlap
+        mid = start + (end - start) // 2
+
+        leftres = self._query(
+            2 * node, start, mid, left, right
+        )
+        rightres = self._query(
+            2 * node + 1, mid + 1, end, left, right
+        )
+
+        return self._merge(leftres, rightres)
+
+    def rangeGcdQueries(self, arr, queries):
+        self.n = len(arr)
+        self.tree = [0] * (4 * self.n)
+
+        self._build(arr, 1, 0, self.n - 1)
+
+        res = []
+
+        for query in queries:
+            # Type 0: Range GCD
+            if query[0] == 0:
+                left, right = query[1], query[2]
+
+                res.append(
+                    self._query(
+                        1, 0, self.n - 1, left, right
+                    )
+                )
+
+            # Type 1: Point Update
+            else:
+                ind, val = query[1], query[2]
+
+                self._update(
+                    1, 0, self.n - 1, ind, val
+                )
+
+        return res        
 
 
 
